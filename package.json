@@ -1,7 +1,7 @@
 {
-  "name": "githubpr",
-  "version": "1.0.0",
-  "main": "index.js",
+  "name": "openai-git-pr-review-agent",
+  "version": "0.1.0",
+  "main": "server.js",
   "engines": {
     "node": ">=22.11.0"
   },
@@ -9,10 +9,10 @@
     "dev": "webpack serve --open --stats-error-details",
     "build": "webpack"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["openai", "agent", "Pull request", "gpt", "automated code reviews"],
+  "author": "KarthikBharadwajS",
   "license": "ISC",
-  "description": "",
+  "description": "A simple implementation of git pr review",
   "devDependencies": {
     "@types/compression": "^1.7.5",
     "@types/cors": "^2.8.17",
