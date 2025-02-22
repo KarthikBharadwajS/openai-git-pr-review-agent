@@ -1,0 +1,19 @@
+{
+    "editor.tabSize": 4,
+    "javascript.updateImportsOnFileMove.enabled": "always",
+    "[html][css][scss][javascript][typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true
+    },
+    "[json][jsonc]": {
+      "editor.tabSize": 2,
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": false
+    },
+    "[markdown]": {
+      "editor.tabSize": 2,
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.formatOnSave": true
+    },
+    "editor.wordWrap": "off"
+  }

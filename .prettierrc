@@ -1,0 +1,20 @@
+{
+  "singleQuote": false,
+  "semi": true,
+  "printWidth": 150,
+  "tabWidth": 4,
+  "overrides": [
+    {
+      "files": "*.md",
+      "options": {
+        "tabWidth": 2
+      }
+    },
+    {
+      "files": "*.json",
+      "options": {
+        "tabWidth": 2
+      }
+    }
+  ]
+}
