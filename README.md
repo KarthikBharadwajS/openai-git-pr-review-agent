@@ -82,6 +82,23 @@
 
 ---
 
+## Filtering repos and respective branches
+
+1. Create a `config.json` in the root of the repo
+
+```json
+{
+  "filter_branches": {
+    "repo-a": ["org_name:dev"],
+    "repo-b": ["org_name:main"]
+  }
+}
+```
+
+2. If there is no config.json available, then allows all repos and all branches
+
+---
+
 ## 📜 Viewing Logs on Docker
 
 To 📖 view logs for the running container:

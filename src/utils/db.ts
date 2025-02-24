@@ -6,7 +6,7 @@ import { ReviewStats } from "../api/v1/type";
 
 export const db = new LowSync(new JSONFileSync<ReviewStats>("./data/review-stats.json"), {});
 
-export const getData = (req: Request, res: Response) => {
+export const getReviews = (req: Request, res: Response) => {
     db.read();
     res.json(db.data);
 };

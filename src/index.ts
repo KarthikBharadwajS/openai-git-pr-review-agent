@@ -10,7 +10,7 @@ import logger from "./utils/logger";
 import { shouldCompress } from "./utils/server";
 
 import GithubWebhooks from "./api/v1/routes/github";
-import { getData } from "./utils/db";
+import { getReviews } from "./utils/db";
 import { htmlTemplate as html } from "./utils/html";
 
 /*
@@ -49,10 +49,10 @@ app.use(
 );
 
 app.use("/api/v1", [GithubWebhooks]);
-app.get("/api/v1/stats", getData);
+app.get("/api/v1/stats", getReviews);
 
 // Serve the frontend files
-app.get("/api/stats-dashboard", (req, res) => {
+app.get("/api/stats-dashboard", async (req, res) => {
     res.locals.nonce = crypto.randomBytes(16).toString("base64"); // Generate a unique nonce
     res.setHeader(
         "Content-Security-Policy",

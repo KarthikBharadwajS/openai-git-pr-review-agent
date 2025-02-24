@@ -13,6 +13,7 @@ import { messages } from "../../../utils/openai/boilerplate";
 import { db } from "../../../utils/db";
 
 import { REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./prompt";
+import { readConfig } from "../../../utils/config";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -107,6 +108,14 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
 
             try {
                 logger.info(`Reviewing PR ${pull_request.number} in ${repository.name}`);
+
+                const config = await readConfig();
+                if (config && config["filter_branches"] && config["filter_branches"][repository.name]) {
+                    if (!config["filter_branches"][repository.name].includes(pull_request.base.ref)) {
+                        logger.info(`Skipped PR ${pull_request.number} in ${repository.name} due to branch filter`);
+                        return;
+                    }
+                }
 
                 const owner = repository.owner.login;
                 const repo = repository.name;
