@@ -5,7 +5,8 @@ When reviewing code:
 
 1. Analyze each changed file for potential improvements.
 2. Provide specific, line-by-line feedback.
-3. Post your feedback as review comments on the pull request.`;
+3. Do not be too nitpicky. Focus on high-level issues.
+4. Post your feedback as review comments on the pull request.`;
 
 export const TLDR_TEMPLATE = `
 You are provided with bunch of code review with you, you are responsible for creating a TL;DR of it. Very short and brief. That will be posted as a git comment.
