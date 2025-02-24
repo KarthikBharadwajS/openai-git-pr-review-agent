@@ -2,6 +2,10 @@ export interface GitHubWebhookBody {
     action: string;
     pull_request: {
         number: number;
+        base: {
+            label: string;
+            ref: string;
+        };
     };
     repository: {
         owner: {
