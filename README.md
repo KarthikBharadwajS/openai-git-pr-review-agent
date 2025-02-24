@@ -10,6 +10,23 @@
 
 ---
 
+## 🐳 Setup for Running on Docker
+
+1. **🚀 Run the compose in detached mode:**
+
+   ```bash
+   docker compose up --build -d
+   ```
+
+2. Thats it, everything should run.
+
+3. To stop the running container
+   ```bash
+   docker compose down
+   ```
+
+---
+
 ## ⚙️ Setup for Running on 🟢 Node.js
 
 1. **📦 Install dependencies:**
@@ -44,41 +61,6 @@
    ```
 
 4. **🌐 For local testing, use ngrok**
-
----
-
-## 🐳 Setup for Running on Docker
-
-1. **⬇️ Install Docker** (if not already installed).
-2. **📦 Build the Docker image:**
-
-   ```bash
-   docker build -t git-pr-reviewer .
-   ```
-
-3. **🚀 Run the container in detached mode:**
-
-   ```bash
-   docker run -d -it -p 8080:8080 git-pr-reviewer
-   ```
-
-4. **✅ Verify the container is running:**
-
-   ```bash
-   docker ps
-   ```
-
-5. **🛑 Stop the container:**
-
-   ```bash
-   docker stop <container_id>
-   ```
-
-6. **🗑️ Remove the container:**
-
-   ```bash
-   docker rm <container_id>
-   ```
 
 ---
 
