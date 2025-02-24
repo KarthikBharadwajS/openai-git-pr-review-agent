@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Octokit } from "@octokit/rest";
 import * as dotenv from "dotenv";
 import moment from "moment";
+import { isMatch } from "micromatch";
 
 import type { emitterEventNames } from "@octokit/webhooks";
 import type { FileReview, GitHubWebhookBody, ReviewFeedback, ReviewResponse, Reviews, ReviewStats } from "../type";
@@ -73,7 +74,7 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
             tokens_used: actionRes.tokens_used,
         };
     } catch (error) {
-        logger.error("Error at initiateFeedback", error);
+        logger.error(`Error at initiateFeedback ${JSON.stringify(error, null, 2)}`);
         return null;
     }
 };
@@ -137,7 +138,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                         config &&
                         config.ignore_files &&
                         config.ignore_files[repository.name] &&
-                        config.ignore_files[repository.name].includes(file.filename)
+                        isMatch(file.filename, config.ignore_files[repository.name])
                     ) {
                         logger.info(`Skipped file ${file.filename} due to ignore_files filter`);
                         continue;

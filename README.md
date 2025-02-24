@@ -71,11 +71,11 @@
 ```json
 {
   "filter_branches": {
-    "repo-a": ["org_name:branch_name1"],
-    "repo-b": ["org_name:branch_name1", "org_name:branch_name2"]
+    "repo-a": ["branch_name1"],
+    "repo-b": ["branch_name1", "branch_name2"]
   },
   "ignore_files": {
-    "repo-a": ["README.md", "docs/CONTRIBUTING.md"]
+    "repo-a": ["*.json", "docs/*", "script.sh"]
   }
 }
 ```
