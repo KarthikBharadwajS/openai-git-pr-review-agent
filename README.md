@@ -82,20 +82,20 @@
 
 ---
 
-## Filtering repos and respective branches
+## Filtering branches
 
 1. Create a `config.json` in the root of the repo
 
 ```json
 {
   "filter_branches": {
-    "repo-a": ["org_name:dev"],
-    "repo-b": ["org_name:main"]
+    "repo-a": ["org_name:branch_name1"],
+    "repo-b": ["org_name:branch_name1", "org_name:branch_name2"]
   }
 }
 ```
 
-2. If there is no config.json available, then allows all repos and all branches
+2. If there is no config.json available, then allows all branches
 
 ---
 
