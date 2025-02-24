@@ -9,7 +9,13 @@
     "dev": "webpack serve --open --stats-error-details",
     "build": "webpack"
   },
-  "keywords": ["openai", "agent", "Pull request", "gpt", "automated code reviews"],
+  "keywords": [
+    "openai",
+    "agent",
+    "Pull request",
+    "gpt",
+    "automated code reviews"
+  ],
   "author": "KarthikBharadwajS",
   "license": "ISC",
   "description": "A simple implementation of git pr review",
@@ -32,6 +38,8 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "helmet": "^8.0.0",
+    "lowdb": "^7.0.1",
+    "moment": "^2.30.1",
     "openai": "^4.85.3",
     "pino": "^9.6.0",
     "tsx": "^4.19.3"

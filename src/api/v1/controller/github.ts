@@ -1,20 +1,24 @@
 import { Request, Response, NextFunction } from "express";
 import { Octokit } from "@octokit/rest";
 import * as dotenv from "dotenv";
+import moment from "moment";
 
 import type { emitterEventNames } from "@octokit/webhooks";
-import type { FileReview, GitHubWebhookBody, ReviewFeedback, ReviewResponse } from "../type";
+import type { FileReview, GitHubWebhookBody, ReviewFeedback, ReviewResponse, Reviews, ReviewStats } from "../type";
 
 import logger from "../../../utils/logger";
 import { performAction } from "../../../utils/openai/action";
 import { chatCompletion } from "../../../utils/openai/openai";
 import { messages } from "../../../utils/openai/boilerplate";
+import { db } from "../../../utils/db";
 
 import { REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./prompt";
 
 dotenv.config({ path: __dirname + "/.env" });
 
 const PR_FILE_THRESHOLD = 25000;
+db.read();
+db.data ||= {};
 
 const initiateFeedback = async (file: { filename: string; patch: string }, validLineNos: number[], lines: Map<number, number>) => {
     try {
@@ -55,6 +59,7 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
         ])) as {
             name: string;
             arguments: string;
+            tokens_used: number;
         };
 
         const feedback: ReviewResponse["feedback"] = !actionRes.arguments ? [] : JSON.parse(actionRes.arguments);
@@ -64,8 +69,23 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
         return {
             file: file.filename,
             feedback: validFeedback,
+            tokens_used: actionRes.tokens_used,
         };
-    } catch (error) {}
+    } catch (error) {
+        logger.error("Error at initiateFeedback", error);
+        return null;
+    }
+};
+
+const updateReviewStats = (review: Reviews) => {
+    const today = moment().format("YYYY-MM-DD");
+    if (!db.data[today]) {
+        db.data[today] = [];
+        db.write();
+    }
+
+    db.data[today].push(review);
+    db.write();
 };
 
 export const gitReviewWebhook = async (req: Request, res: Response, next: NextFunction) => {
@@ -101,6 +121,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                 logger.info(`Fetched files for PR ${files.length}`);
 
                 const reviews: FileReview[] = [];
+                let total_tokens_used = 0;
 
                 for (const file of files) {
                     if (!file.patch || file.patch.length > PR_FILE_THRESHOLD) continue;
@@ -112,17 +133,27 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     if (validateLines.length === 0) continue;
 
                     const review = await initiateFeedback({ filename: file.filename, patch: file.patch }, validateLines, lines);
-                    if (review) reviews.push(review);
+                    if (review) {
+                        reviews.push(review);
+                        total_tokens_used += review.tokens_used;
+                    }
                 }
 
                 logger.info("Completed reviews for PR", reviews.length);
                 if (!reviews.length) {
+                    updateReviewStats({
+                        repo_name: repo,
+                        pr_number: pull_number,
+                        comments_generated: 0,
+                        files_reviewed: files.length,
+                        tokens_used: total_tokens_used,
+                    });
                     await octokit.pulls.createReview({
                         owner,
                         repo,
                         pull_number,
                         event: "COMMENT",
-                        body: "Bot: Everything looks good",
+                        body: "BOT: Everything looks good",
                     });
                     return;
                 }
@@ -145,7 +176,14 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     pull_number,
                     event: "COMMENT",
                     comments,
-                    body: (postReviewComment.choices[0].message.content as string) ?? "I review is done, have a look",
+                    body: "BOT: " + ((postReviewComment.choices[0].message.content as string) ?? "A review is done, have a look"),
+                });
+                updateReviewStats({
+                    repo_name: repo,
+                    pr_number: pull_number,
+                    comments_generated: comments.length,
+                    files_reviewed: files.length,
+                    tokens_used: total_tokens_used + (postReviewComment.usage?.total_tokens ?? 0),
                 });
                 return;
             } catch (error) {

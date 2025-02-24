@@ -23,8 +23,20 @@ export interface ReviewResponse {
 export interface FileReview {
     file: string;
     feedback: ReviewFeedback[];
+    tokens_used: number;
 }
 
+export interface ReviewStats {
+    [key: string]: Reviews[];
+}
+
+export interface Reviews {
+    repo_name: string;
+    pr_number: number;
+    comments_generated: number;
+    files_reviewed: number;
+    tokens_used: number;
+}
 export interface ReviewState {
     owner?: string;
     repo?: string;

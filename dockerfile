@@ -20,10 +20,14 @@ COPY --from=builder /usr/src/app/dist/server.js ./server.js
 COPY --from=builder /usr/src/app/package*.json ./
 
 COPY .env .env
+COPY . .
 
 # Install PM2 globally
 RUN npm install --production
 RUN npm install -g pm2
+
+# Create persistent data directory
+RUN mkdir -p /usr/src/app/data
 
 # Expose the default port (the app will use the PORT from .env, default 8080)
 EXPOSE 8080

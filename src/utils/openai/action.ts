@@ -34,6 +34,7 @@ export const performAction = async (instructions: string, query: string, availab
             return {
                 name: fn.name,
                 arguments: fn.arguments,
+                tokens_used: completion.usage?.total_tokens ?? 0,
             };
         }
     } catch (error) {
