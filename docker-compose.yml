@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  git-pr-reviewer:
+    build: .
+    container_name: git-pr-reviewer
+    restart: always
+    volumes:
+      - ./data:/usr/src/app/data  # Persist LowDB storage
+      - ./.env:/usr/src/app/.env  # Load environment variables
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "8080:8080"
