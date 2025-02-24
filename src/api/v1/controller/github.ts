@@ -64,9 +64,9 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
             tokens_used: number;
         };
 
-        const feedback: ReviewResponse["feedback"] = !actionRes.arguments ? [] : JSON.parse(actionRes.arguments);
+        const args: ReviewResponse = !actionRes.arguments ? { feedback: [] } : JSON.parse(actionRes.arguments);
 
-        const validFeedback = feedback.filter((item) => lines.has(item.line));
+        const validFeedback = args.feedback && args.feedback.length ? args.feedback.filter((item) => lines.has(item.line)) : [];
 
         return {
             file: file.filename,
