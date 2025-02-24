@@ -79,11 +79,12 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
 
         const body: GitHubWebhookBody = req.body;
 
+        logger.info("Received webhook event", gitEvent, body.action);
         if (gitEvent === "pull_request" && (body.action === "opened" || body.action === "synchronize" || body.action === "reopened")) {
             const { pull_request, repository } = body;
 
             try {
-                logger.debug(pull_request.number, " : PR REVIEW :");
+                logger.info(" : PR REVIEW :", pull_request.number);
 
                 const owner = repository.owner.login;
                 const repo = repository.name;
@@ -95,6 +96,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     repo,
                     pull_number,
                 });
+                logger.info("Fetched files for PR", files.length);
 
                 const reviews: FileReview[] = [];
 
@@ -111,6 +113,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     if (review) reviews.push(review);
                 }
 
+                logger.info("Completed reviews for PR", reviews.length);
                 if (!reviews.length) {
                     await octokit.pulls.createReview({
                         owner,
