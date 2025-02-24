@@ -112,6 +112,13 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                 }
 
                 if (!reviews.length) {
+                    await octokit.pulls.createReview({
+                        owner,
+                        repo,
+                        pull_number,
+                        event: "COMMENT",
+                        body: "Bot: Everything looks good",
+                    });
                     res.status(200).json({ ok: true, message: "Nothing to review" });
                     return;
                 }
