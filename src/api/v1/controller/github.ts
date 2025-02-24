@@ -79,12 +79,14 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
 
         const body: GitHubWebhookBody = req.body;
 
-        logger.info("Received webhook event", gitEvent, body.action);
+        logger.info(`Received ${gitEvent} event with action ${body.action}`);
         if (gitEvent === "pull_request" && (body.action === "opened" || body.action === "synchronize" || body.action === "reopened")) {
+            res.status(200).json({ ok: true, message: "Acknowledged" });
+
             const { pull_request, repository } = body;
 
             try {
-                logger.info(" : PR REVIEW :", pull_request.number);
+                logger.info(`Reviewing PR ${pull_request.number} in ${repository.name}`);
 
                 const owner = repository.owner.login;
                 const repo = repository.name;
@@ -96,7 +98,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     repo,
                     pull_number,
                 });
-                logger.info("Fetched files for PR", files.length);
+                logger.info(`Fetched files for PR ${files.length}`);
 
                 const reviews: FileReview[] = [];
 
@@ -122,7 +124,6 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                         event: "COMMENT",
                         body: "Bot: Everything looks good",
                     });
-                    res.status(200).json({ ok: true, message: "Nothing to review" });
                     return;
                 }
 
@@ -146,11 +147,9 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     comments,
                     body: (postReviewComment.choices[0].message.content as string) ?? "I review is done, have a look",
                 });
-                res.status(200).json({ ok: true, message: "Submitted" });
                 return;
             } catch (error) {
                 logger.error("Error at review inside :", error);
-                res.status(400).json({ ok: false, message: "something went wrong" });
                 return;
             }
         }
