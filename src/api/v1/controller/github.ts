@@ -133,8 +133,19 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                 let total_tokens_used = 0;
 
                 for (const file of files) {
+                    if (
+                        config &&
+                        config.ignore_files &&
+                        config.ignore_files[repository.name] &&
+                        config.ignore_files[repository.name].includes(file.filename)
+                    ) {
+                        logger.info(`Skipped file ${file.filename} due to ignore_files filter`);
+                        continue;
+                    }
+
                     if (!file.patch || file.patch.length > PR_FILE_THRESHOLD) continue;
 
+                    logger.info(`Reviewing file ${file.filename}`);
                     const lines = lineParser(file.patch);
                     const validateLines = Array.from(lines.keys()).sort((a, b) => a - b);
 
