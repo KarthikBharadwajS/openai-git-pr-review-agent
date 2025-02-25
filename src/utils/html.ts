@@ -94,6 +94,7 @@ export const htmlTemplate = (nonce: string) => `
                         <th>Comments</th>
                         <th>Files Reviewed</th>
                         <th>Tokens Used</th>
+                        <th>Cost</th>
                     </tr>
                 </thead>
                 <tbody id="review-stats-body">
@@ -106,7 +107,7 @@ export const htmlTemplate = (nonce: string) => `
     <script nonce="${nonce}">
         document.getElementById("fetch-data").addEventListener("click", function() {
             const tableBody = document.getElementById("review-stats-body");
-            tableBody.innerHTML = "<tr><td colspan='6'>Loading...</td></tr>";
+            tableBody.innerHTML = "<tr><td colspan='7'>Loading...</td></tr>";
 
             fetch("/api/v1/stats")
                 .then(response => response.json())
@@ -115,7 +116,7 @@ export const htmlTemplate = (nonce: string) => `
                     tableBody.innerHTML = "";
 
                     if (!Object.keys(data).length) {
-                        tableBody.innerHTML = "<tr><td colspan='6'>No review data available</td></tr>";
+                        tableBody.innerHTML = "<tr><td colspan='7'>No review data available</td></tr>";
                         return;
                     }
 
@@ -130,6 +131,7 @@ export const htmlTemplate = (nonce: string) => `
                                 <td>\${review.comments_generated}</td>
                                 <td>\${review.files_reviewed}</td>
                                 <td>\${review.tokens_used}</td>
+                                <td>\${review.cost ? review.cost.toFixed(6) : "NA"}</td>
                             \`;
 
                             tableBody.appendChild(row);
@@ -138,7 +140,7 @@ export const htmlTemplate = (nonce: string) => `
                 })
                 .catch(error => {
                     console.error("Error fetching review stats:", error);
-                    tableBody.innerHTML = "<tr><td colspan='6'>Error loading data</td></tr>";
+                    tableBody.innerHTML = "<tr><td colspan='7'>Error loading data</td></tr>";
                 });
         });
     </script>
