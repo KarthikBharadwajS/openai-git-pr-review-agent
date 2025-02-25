@@ -191,6 +191,9 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     }))
                 );
                 console.log("comments :", comments.length);
+                comments.forEach((comment) => {
+                    console.log("comment :", comment);
+                });
 
                 /*await octokit.pulls.createReview({
                     owner,
