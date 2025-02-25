@@ -74,7 +74,7 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
             tokens_used: actionRes.tokens_used,
         };
     } catch (error) {
-        logger.error(`Error at initiateFeedback ${JSON.stringify(error, null, 2)}`);
+        console.error(`Error at initiateFeedback ${JSON.stringify(error, null, 2)}`);
         return null;
     }
 };
@@ -190,15 +190,16 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                         body: feedback.comment,
                     }))
                 );
+                console.log("comments :", comments.length);
 
-                await octokit.pulls.createReview({
+                /*await octokit.pulls.createReview({
                     owner,
                     repo,
                     pull_number,
                     event: "COMMENT",
                     comments,
                     body: "BOT: " + ((postReviewComment.choices[0].message.content as string) ?? "A review is done, have a look"),
-                });
+                });*/
                 updateReviewStats({
                     repo_name: repo,
                     pr_number: pull_number,
@@ -208,14 +209,14 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                 });
                 return;
             } catch (error) {
-                logger.error("Error at review inside :", error);
+                console.error("Error at review inside :", error);
                 return;
             }
         }
 
         res.status(200).json({ ok: false, message: `Skipped due to no match ${gitEvent} ${body.action}` });
     } catch (error) {
-        logger.error("Error at gitReviewWebhook", error);
+        console.error("Error at gitReviewWebhook", error);
         res.status(400).json({ ok: false, message: "something went wrong" });
     }
 };
