@@ -5,7 +5,7 @@ import * as dotenv from "dotenv";
 
 dotenv.config({ path: __dirname + "/.env" });
 
-const DEFAULT_MODEL: ChatModel = "gpt-4o-mini";
+export const DEFAULT_MODEL: ChatModel = (process.env.OPENAI_MODEL as string as ChatModel) ?? "gpt-4o-mini";
 type CompletionExclusions = "model";
 
 export const openai = new OpenAI({

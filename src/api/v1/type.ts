@@ -40,6 +40,9 @@ export interface Reviews {
     comments_generated: number;
     files_reviewed: number;
     tokens_used: number;
+    model: string;
+    timestamp: string;
+    cost: number;
 }
 export interface ReviewState {
     owner?: string;

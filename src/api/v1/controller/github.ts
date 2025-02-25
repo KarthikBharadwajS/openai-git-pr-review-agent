@@ -9,12 +9,13 @@ import type { FileReview, GitHubWebhookBody, ReviewFeedback, ReviewResponse, Rev
 
 import logger from "../../../utils/logger";
 import { performAction } from "../../../utils/openai/action";
-import { chatCompletion } from "../../../utils/openai/openai";
+import { chatCompletion, DEFAULT_MODEL } from "../../../utils/openai/openai";
 import { messages } from "../../../utils/openai/boilerplate";
 import { db } from "../../../utils/db";
 
 import { REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./prompt";
 import { readConfig } from "../../../utils/config";
+import { calculateCost } from "../../../utils/cost";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -62,6 +63,7 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
             name: string;
             arguments: string;
             tokens_used: number;
+            cost: number;
         };
 
         const args: ReviewResponse = !actionRes.arguments ? { feedback: [] } : JSON.parse(actionRes.arguments);
@@ -72,6 +74,7 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
             file: file.filename,
             feedback: validFeedback,
             tokens_used: actionRes.tokens_used,
+            cost: actionRes.cost,
         };
     } catch (error) {
         console.error(`Error at initiateFeedback ${JSON.stringify(error, null, 2)}`);
@@ -132,6 +135,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
 
                 const reviews: FileReview[] = [];
                 let total_tokens_used = 0;
+                let cost = 0;
 
                 for (const file of files) {
                     if (
@@ -157,6 +161,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     if (review) {
                         reviews.push(review);
                         total_tokens_used += review.tokens_used;
+                        cost += review.cost;
                     }
                 }
 
@@ -168,6 +173,9 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                         comments_generated: 0,
                         files_reviewed: files.length,
                         tokens_used: total_tokens_used,
+                        model: DEFAULT_MODEL,
+                        timestamp: new Date().toISOString(),
+                        cost,
                     });
                     await octokit.pulls.createReview({
                         owner,
@@ -205,6 +213,15 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     comments_generated: comments.length,
                     files_reviewed: files.length,
                     tokens_used: total_tokens_used + (postReviewComment.usage?.total_tokens ?? 0),
+                    model: DEFAULT_MODEL,
+                    timestamp: new Date().toISOString(),
+                    cost:
+                        cost +
+                        calculateCost(
+                            postReviewComment.usage?.prompt_tokens ?? 0,
+                            postReviewComment.usage?.completion_tokens ?? 0,
+                            postReviewComment.model ?? DEFAULT_MODEL
+                        ),
                 });
                 return;
             } catch (error) {

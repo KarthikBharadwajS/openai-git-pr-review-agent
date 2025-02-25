@@ -1,6 +1,7 @@
+import { calculateCost } from "../cost";
 import logger from "../logger";
 import { messages, tools, ToolsBoilerPlateArgs } from "./boilerplate";
-import { chatCompletion } from "./openai";
+import { chatCompletion, DEFAULT_MODEL } from "./openai";
 
 export const performAction = async (instructions: string, query: string, availableTools: ToolsBoilerPlateArgs[]) => {
     try {
@@ -35,6 +36,11 @@ export const performAction = async (instructions: string, query: string, availab
                 name: fn.name,
                 arguments: fn.arguments,
                 tokens_used: completion.usage?.total_tokens ?? 0,
+                cost: calculateCost(
+                    completion.usage?.prompt_tokens ?? 0,
+                    completion.usage?.completion_tokens ?? 0,
+                    completion.model ?? DEFAULT_MODEL
+                ),
             };
         }
     } catch (error) {
