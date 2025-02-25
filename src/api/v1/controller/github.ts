@@ -190,19 +190,15 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                         body: feedback.comment,
                     }))
                 );
-                console.log("comments :", comments.length);
-                comments.forEach((comment) => {
-                    console.log("comment :", comment);
-                });
 
-                /*await octokit.pulls.createReview({
+                await octokit.pulls.createReview({
                     owner,
                     repo,
                     pull_number,
                     event: "COMMENT",
                     comments,
                     body: "BOT: " + ((postReviewComment.choices[0].message.content as string) ?? "A review is done, have a look"),
-                });*/
+                });
                 updateReviewStats({
                     repo_name: repo,
                     pr_number: pull_number,
