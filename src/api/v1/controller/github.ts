@@ -97,11 +97,12 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
         const args: ReviewResponse = !actionRes.arguments ? { feedback: [] } : JSON.parse(actionRes.arguments);
 
         const validFeedbackP1 = args.feedback && args.feedback.length ? args.feedback.filter((item) => lines.has(item.line)) : [];
+        console.log("validFeedbackP1", validFeedbackP1);
 
         const feedbackLoopP2 = await feedbackLoopReview(validFeedbackP1, file.patch, validLineNos);
-        console.log("feedbackLoopP2", feedbackLoopP2);
         const parsedResults: ReviewResponse = (feedbackLoopP2?.choices[0]?.message?.parsed as ReviewResponse) ?? [];
 
+        console.log("Original feedback ", validFeedbackP1.length, "Refined feedback", parsedResults.feedback.length);
         console.log("parsedResults", parsedResults);
         const validFeedback =
             parsedResults.feedback && parsedResults.feedback.length ? parsedResults.feedback.filter((item) => lines.has(item.line)) : [];
