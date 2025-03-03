@@ -7,7 +7,7 @@ import { z } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
 
 import type { emitterEventNames } from "@octokit/webhooks";
-import type { FileReview, GitHubWebhookBody, ReviewFeedback, ReviewResponse, Reviews, ReviewStats } from "../type";
+import type { FileReview, GitHubWebhookBody, ReviewFeedback, ReviewResponse, Reviews } from "../type";
 
 import logger from "../../../utils/logger";
 import { performAction } from "../../../utils/openai/action";
@@ -97,17 +97,12 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
         const args: ReviewResponse = !actionRes.arguments ? { feedback: [] } : JSON.parse(actionRes.arguments);
 
         const validFeedbackP1 = args.feedback && args.feedback.length ? args.feedback.filter((item) => lines.has(item.line)) : [];
-        console.log("validFeedbackP1", validFeedbackP1);
 
         const feedbackLoopP2 = await feedbackLoopReview(validFeedbackP1, file.patch, validLineNos);
         const parsedResults: ReviewResponse = (feedbackLoopP2?.choices[0]?.message?.parsed as ReviewResponse) ?? [];
 
-        console.log("Original feedback ", validFeedbackP1.length, "Refined feedback", parsedResults.feedback.length);
-        console.log("parsedResults", parsedResults);
         const validFeedback =
             parsedResults.feedback && parsedResults.feedback.length ? parsedResults.feedback.filter((item) => lines.has(item.line)) : [];
-
-        console.log("validFeedback", validFeedback);
         return {
             file: file.filename,
             feedback: validFeedback,
@@ -228,7 +223,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                 }
 
                 const postReviewComment = await chatCompletion({
-                    messages: messages(TLDR_TEMPLATE.replace("{{reviews}}", JSON.stringify(reviews.slice(0, 10), null, 2)), null),
+                    messages: messages(TLDR_TEMPLATE.replace("{{reviews}}", JSON.stringify(reviews.slice(0, 25), null, 2)), null),
                 });
 
                 const comments = reviews.flatMap((review: FileReview) =>
@@ -239,14 +234,14 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     }))
                 );
 
-                /*await octokit.pulls.createReview({
+                await octokit.pulls.createReview({
                     owner,
                     repo,
                     pull_number,
                     event: "COMMENT",
                     comments,
                     body: "BOT: " + ((postReviewComment.choices[0].message.content as string) ?? "A review is done, have a look"),
-                });*/
+                });
                 updateReviewStats({
                     repo_name: repo,
                     pr_number: pull_number,
