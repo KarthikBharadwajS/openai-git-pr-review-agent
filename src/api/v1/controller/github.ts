@@ -3,17 +3,19 @@ import { Octokit } from "@octokit/rest";
 import * as dotenv from "dotenv";
 import moment from "moment";
 import { isMatch } from "micromatch";
+import { z } from "zod";
+import { zodResponseFormat } from "openai/helpers/zod";
 
 import type { emitterEventNames } from "@octokit/webhooks";
 import type { FileReview, GitHubWebhookBody, ReviewFeedback, ReviewResponse, Reviews, ReviewStats } from "../type";
 
 import logger from "../../../utils/logger";
 import { performAction } from "../../../utils/openai/action";
-import { chatCompletion, DEFAULT_MODEL } from "../../../utils/openai/openai";
+import { chatCompletion, DEFAULT_MODEL, parseCompletion } from "../../../utils/openai/openai";
 import { messages } from "../../../utils/openai/boilerplate";
 import { db } from "../../../utils/db";
 
-import { REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./prompt";
+import { FEEDBACK_LOOP_REVIEW, REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./prompt";
 import { readConfig } from "../../../utils/config";
 import { calculateCost } from "../../../utils/cost";
 
@@ -23,6 +25,31 @@ const PR_FILE_THRESHOLD = 25000;
 db.read();
 db.data ||= {};
 
+const feedbackLoopReview = async (feedback: ReviewFeedback[], patch: string, validLineNos: number[]) => {
+    try {
+        const dynamicTaggingSchema = z.object({
+            feedback: z.array(
+                z.object({
+                    line: z.number(),
+                    comment: z.string(),
+                })
+            ),
+        });
+
+        const responseFormat = zodResponseFormat(dynamicTaggingSchema, "describe_tags");
+
+        return await parseCompletion(
+            {
+                messages: messages(FEEDBACK_LOOP_REVIEW(JSON.stringify(feedback, null, 2), patch, validLineNos.join(", ")), null),
+            },
+            responseFormat
+        );
+    } catch (error) {
+        console.error(`Error at feedbackLoopReview ${JSON.stringify(error, null, 2)}`);
+        return null;
+    }
+};
+
 const initiateFeedback = async (file: { filename: string; patch: string }, validLineNos: number[], lines: Map<number, number>) => {
     try {
         const user_query = `
@@ -31,6 +58,7 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
             File: ${file.filename}
             Valid line numbers for you to comment on if there is anything to comment on: ${validLineNos.join(", ")}
 
+            Make sure to follow typescript standards and best practices.
             Patches / Changes:
             ${file.patch}
         `;
@@ -68,13 +96,24 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
 
         const args: ReviewResponse = !actionRes.arguments ? { feedback: [] } : JSON.parse(actionRes.arguments);
 
-        const validFeedback = args.feedback && args.feedback.length ? args.feedback.filter((item) => lines.has(item.line)) : [];
+        const validFeedbackP1 = args.feedback && args.feedback.length ? args.feedback.filter((item) => lines.has(item.line)) : [];
 
+        const feedbackLoopP2 = await feedbackLoopReview(validFeedbackP1, file.patch, validLineNos);
+        console.log("feedbackLoopP2", feedbackLoopP2);
+        const parsedResults: ReviewResponse = (feedbackLoopP2?.choices[0]?.message?.parsed as ReviewResponse) ?? [];
+
+        console.log("parsedResults", parsedResults);
+        const validFeedback =
+            parsedResults.feedback && parsedResults.feedback.length ? parsedResults.feedback.filter((item) => lines.has(item.line)) : [];
+
+        console.log("validFeedback", validFeedback);
         return {
             file: file.filename,
             feedback: validFeedback,
-            tokens_used: actionRes.tokens_used,
-            cost: actionRes.cost,
+            tokens_used: actionRes.tokens_used + (feedbackLoopP2?.usage?.total_tokens ?? 0),
+            cost:
+                actionRes.cost +
+                calculateCost(feedbackLoopP2?.usage?.prompt_tokens ?? 0, feedbackLoopP2?.usage?.completion_tokens ?? 0, DEFAULT_MODEL),
         };
     } catch (error) {
         console.error(`Error at initiateFeedback ${JSON.stringify(error, null, 2)}`);
