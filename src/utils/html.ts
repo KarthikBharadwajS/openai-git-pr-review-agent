@@ -88,13 +88,13 @@ export const htmlTemplate = (nonce: string) => `
             <table>
                 <thead>
                     <tr>
-                        <th>Date</th>
+                        <th>Date (UTC)</th>
                         <th>Repository</th>
                         <th>PR Number</th>
                         <th>Comments</th>
                         <th>Files Reviewed</th>
                         <th>Tokens Used</th>
-                        <th>Cost</th>
+                        <th>Cost (USD)</th>
                     </tr>
                 </thead>
                 <tbody id="review-stats-body">
