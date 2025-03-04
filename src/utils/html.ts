@@ -120,12 +120,12 @@ export const htmlTemplate = (nonce: string) => `
                         return;
                     }
 
-                    Object.entries(data).forEach(([date, reviews]) => {
-                        reviews.forEach((review) => {
+                    Object.entries(data).reverse().forEach(([date, reviews]) => {
+                        reviews.reverse().forEach((review) => {
                             const row = document.createElement("tr");
 
                             row.innerHTML = \`
-                                <td>\${date}</td>
+                                <td>\${review.timestamp || date}</td>
                                 <td>\${review.repo_name}</td>
                                 <td>#\${review.pr_number}</td>
                                 <td>\${review.comments_generated}</td>
