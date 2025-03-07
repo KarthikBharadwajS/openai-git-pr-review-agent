@@ -15,7 +15,7 @@ import { chatCompletion, DEFAULT_MODEL, parseCompletion } from "../../../utils/o
 import { messages } from "../../../utils/openai/boilerplate";
 import { db } from "../../../utils/db";
 
-import { FEEDBACK_LOOP_REVIEW, REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./prompt";
+import { FEEDBACK_LOOP_REVIEW, REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./helpers/prompt";
 import { readConfig } from "../../../utils/config";
 import { calculateCost } from "../../../utils/cost";
 

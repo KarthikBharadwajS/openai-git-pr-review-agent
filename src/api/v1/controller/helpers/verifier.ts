@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { Webhooks } from "@octokit/webhooks";
 import * as dotenv from "dotenv";
 
-import { RawBodyRequest } from "../../../utils/inject";
+import { RawBodyRequest } from "../../../../utils/inject";
 
 dotenv.config({ path: __dirname + "/.env" });
 

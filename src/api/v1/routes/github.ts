@@ -2,7 +2,7 @@ import { json, Router } from "express";
 
 import { gitReviewWebhook } from "../controller/github";
 import inject from "../../../utils/inject";
-import { verify } from "../controller/verifier";
+import { verify } from "../controller/helpers/verifier";
 
 const router = Router();
 
