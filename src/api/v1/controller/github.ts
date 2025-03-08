@@ -217,7 +217,6 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     // Skip files with no valid lines to review
                     if (validateLines.length === 0) continue;
 
-                    console.log("Existing reviews for file:", existingReviews.get(file.filename));
                     const review = await initiateFeedback(
                         { filename: file.filename, patch: file.patch },
                         validateLines,
@@ -254,7 +253,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     return;
                 }
 
-                logger.info("Completed reviews for PR", reviews.length);
+                logger.info(`Completed reviews for PR ${reviews.length}`);
                 if (!reviews.length) {
                     updateReviewStats({
                         repo_name: repo,

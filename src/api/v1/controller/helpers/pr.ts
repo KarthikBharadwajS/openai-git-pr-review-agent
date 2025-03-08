@@ -8,7 +8,6 @@ export const getExistingReviewComments = async (octokit: Octokit, owner: string,
         let existingComments: Map<string, ReviewFeedback[]> = new Map();
 
         for (const review of reviews) {
-            console.log("Review:", review);
             if (!review.body.startsWith("BOT:")) continue;
             const { data: comments } = await octokit.pulls.listReviewComments({
                 owner,
@@ -18,7 +17,6 @@ export const getExistingReviewComments = async (octokit: Octokit, owner: string,
             });
 
             for (const comment of comments) {
-                console.log("Comment:", comment);
                 if (!existingComments.has(comment.path)) {
                     existingComments.set(comment.path, []);
                 }
@@ -38,7 +36,7 @@ export const getExistingReviewComments = async (octokit: Octokit, owner: string,
 
 export const createReviewComment = async (octokit: Octokit, params: RestEndpointMethodTypes["pulls"]["createReview"]["parameters"]) => {
     try {
-        // await octokit.pulls.createReview(params);
+        await octokit.pulls.createReview(params);
     } catch (error) {
         console.error("Error creating review comment:", error);
     }
