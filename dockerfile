@@ -24,7 +24,7 @@ COPY . .
 
 # Install PM2 globally
 RUN npm install --production
-RUN npm install -g pm2
+RUN npm install -g pm2 --silent --no-fund --no-audit
 
 # Create persistent data directory
 RUN mkdir -p /usr/src/app/data

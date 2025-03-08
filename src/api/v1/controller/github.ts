@@ -18,6 +18,7 @@ import { db } from "../../../utils/db";
 import { FEEDBACK_LOOP_REVIEW, REVIEW_INSTRUCTIONS, TLDR_TEMPLATE } from "./helpers/prompt";
 import { readConfig } from "../../../utils/config";
 import { calculateCost } from "../../../utils/cost";
+import { createReviewComment, filterResolvedAndNewIssues, getExistingReviewComments, getFilesChanged } from "./helpers/pr";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -50,7 +51,12 @@ const feedbackLoopReview = async (feedback: ReviewFeedback[], patch: string, val
     }
 };
 
-const initiateFeedback = async (file: { filename: string; patch: string }, validLineNos: number[], lines: Map<number, number>) => {
+const initiateFeedback = async (
+    file: { filename: string; patch: string },
+    validLineNos: number[],
+    lines: Map<number, number>,
+    existingReviews: ReviewFeedback[] | undefined
+) => {
     try {
         const user_query = `
             Review the code.
@@ -58,9 +64,28 @@ const initiateFeedback = async (file: { filename: string; patch: string }, valid
             File: ${file.filename}
             Valid line numbers for you to comment on if there is anything to comment on: ${validLineNos.join(", ")}
 
+            ${
+                existingReviews?.length
+                    ? `
+                    ========================================
+                    Previous Reviews:
+                    ========================================
+                    Previously you provided me with few reviews, do not resubmit ones which are closed:
+                    ${JSON.stringify(existingReviews, null, 2)}
+                    ========================================
+                    Previous Reviews End
+                    ========================================
+                    `
+                    : ""
+            }
             Make sure to follow typescript standards and best practices.
+            ========================================
             Patches / Changes:
+            ========================================
             ${file.patch}
+            ========================================
+            Patches / Changes End
+            ========================================
         `;
         const actionRes = (await performAction(REVIEW_INSTRUCTIONS, user_query, [
             {
@@ -161,11 +186,11 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                 const pull_number = pull_request.number;
 
                 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-                const { data: files } = await octokit.pulls.listFiles({
-                    owner,
-                    repo,
-                    pull_number,
-                });
+
+                logger.info(`Fetching existing reviews for PR ${pull_number} in ${repo}`);
+                const existingReviews = (await getExistingReviewComments(octokit, owner, repo, pull_number)) as Map<string, ReviewFeedback[]>;
+
+                const { data: files } = await getFilesChanged(octokit, { owner, repo, pull_number });
                 logger.info(`Fetched files for PR ${files.length}`);
 
                 const reviews: FileReview[] = [];
@@ -192,12 +217,41 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     // Skip files with no valid lines to review
                     if (validateLines.length === 0) continue;
 
-                    const review = await initiateFeedback({ filename: file.filename, patch: file.patch }, validateLines, lines);
+                    console.log("Existing reviews for file:", existingReviews.get(file.filename));
+                    const review = await initiateFeedback(
+                        { filename: file.filename, patch: file.patch },
+                        validateLines,
+                        lines,
+                        existingReviews.get(file.filename)
+                    );
                     if (review) {
                         reviews.push(review);
                         total_tokens_used += review.tokens_used;
                         cost += review.cost;
                     }
+                }
+
+                // Compare new reviews with existing ones and filter
+                const finalReviews = filterResolvedAndNewIssues(existingReviews, reviews);
+                if (!finalReviews.length) {
+                    updateReviewStats({
+                        repo_name: repo,
+                        pr_number: pull_number,
+                        comments_generated: 0,
+                        files_reviewed: files.length,
+                        tokens_used: total_tokens_used,
+                        model: DEFAULT_MODEL,
+                        timestamp: new Date().toISOString(),
+                        cost,
+                    });
+                    await createReviewComment(octokit, {
+                        owner,
+                        repo,
+                        pull_number,
+                        event: "COMMENT",
+                        body: "BOT: Everything looks good. All previously flagged issues have been resolved.",
+                    });
+                    return;
                 }
 
                 logger.info("Completed reviews for PR", reviews.length);
@@ -212,7 +266,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                         timestamp: new Date().toISOString(),
                         cost,
                     });
-                    await octokit.pulls.createReview({
+                    await createReviewComment(octokit, {
                         owner,
                         repo,
                         pull_number,
@@ -234,7 +288,7 @@ export const gitReviewWebhook = async (req: Request, res: Response, next: NextFu
                     }))
                 );
 
-                await octokit.pulls.createReview({
+                await createReviewComment(octokit, {
                     owner,
                     repo,
                     pull_number,
